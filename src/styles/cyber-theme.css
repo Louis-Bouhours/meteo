@@ -1,0 +1,129 @@
+/* Thème flat minimaliste, sombre/bleu avec légère touche cyber */
+:root {
+    --bg: #0b1220;
+    --bg-soft: #0a1020;
+    --bg-softer: #0a0f1e;
+
+    --surface: #101827;
+    --surface-soft: #0f1625;
+    --surface-border: #1f2a44;
+
+    --text: #e6edf7;
+    --text-muted: #9fb0ca;
+
+    --accent: #77BDF7;
+    --accent-neon: #38BDF8;
+
+    --danger: #ef4444;
+}
+
+/* Fond global avec légère grille "cyber" très discrète */
+.app-bg {
+    min-height: 100vh;
+    color: var(--text);
+    background:
+            radial-gradient(1200px 600px at 10% -10%, rgba(29,78,216,0.12), transparent 50%),
+            radial-gradient(800px 400px at 110% 20%, rgba(56,189,248,0.10), transparent 60%),
+            linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 50%, var(--bg-softer) 100%);
+    position: relative;
+    isolation: isolate;
+}
+.app-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+            linear-gradient(rgba(59,130,246,0.04), rgba(56,189,248,0.04)),
+            repeating-linear-gradient(
+                    to bottom,
+                    rgba(120, 144, 180, 0.06) 0px,
+                    rgba(120, 144, 180, 0.06) 1px,
+                    transparent 1px,
+                    transparent 28px
+            );
+    mask-image: radial-gradient(1000px 600px at 50% -10%, black, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Panneaux plats avec contours discrets */
+.glass-card {
+    background: linear-gradient(180deg, rgba(16, 24, 39, 0.65), rgba(16, 24, 39, 0.55));
+    border: 1px solid var(--surface-border);
+    border-radius: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+
+/* Inputs plats, focus anneau fin bleu */
+.glass-input {
+    background: rgba(16, 24, 39, 0.7);
+    border: 1px solid var(--surface-border);
+    color: var(--text);
+    border-radius: 12px;
+}
+.glass-input::placeholder {
+    color: color-mix(in srgb, var(--text-muted) 85%, transparent);
+}
+.glass-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    border-color: color-mix(in srgb, var(--accent-neon) 70%, var(--surface-border));
+}
+
+/* Icône météo un peu plus sobre qu’un gros glow */
+.weather-icon {
+    text-shadow: 0 2px 12px rgba(56,189,248,0.15);
+}
+
+/* Animations utilitaires */
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0px) }
+    50% { transform: translateY(-4px) }
+}
+.animate-pulse-glow {
+    animation: pulseGlow 2.2s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(56,189,248,0)); }
+    50% { filter: drop-shadow(0 0 16px rgba(56,189,248,0.25)); }
+}
+.animate-fade-in {
+    animation: fadeIn 500ms ease-out forwards;
+}
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(8px) }
+    100% { opacity: 1; transform: translateY(0) }
+}
+
+/* Variantes de background selon la météo (subtiles) */
+.bg-clear { }
+.bg-cloudy::before {
+    background:
+            linear-gradient(rgba(148,163,184,0.04), rgba(100,116,139,0.05)),
+            repeating-linear-gradient(
+                    to bottom,
+                    rgba(120, 144, 180, 0.08) 0px,
+                    rgba(120, 144, 180, 0.08) 1px,
+                    transparent 1px,
+                    transparent 28px
+            );
+}
+.bg-rainy::before {
+    background:
+            linear-gradient(rgba(59,130,246,0.05), rgba(56,189,248,0.06)),
+            repeating-linear-gradient(
+                    to bottom,
+                    rgba(56, 189, 248, 0.10) 0px,
+                    rgba(56, 189, 248, 0.10) 1px,
+                    transparent 1px,
+                    transparent 26px
+            );
+}
+.bg-night {
+    background:
+            radial-gradient(1000px 500px at 20% -10%, rgba(14,165,233,0.10), transparent 55%),
+            linear-gradient(180deg, #060a14 0%, #080d18 100%);
+}

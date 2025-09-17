@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Neon Slate Theme - flat minimal + touche cyber, full HSL palette */
+
+@layer base {
+    :root {
+        --background: 222 16% 12%;
+        --foreground: 210 40% 96%;
+
+        --card: 222 22% 14%;
+        --card-foreground: 210 40% 96%;
+        --card-glass: 222 22% 14% / 0.6;
+
+        --popover: 222 22% 14%;
+        --popover-foreground: 210 40% 96%;
+
+        --primary: 199 89% 51%;
+        --primary-foreground: 210 40% 98%;
+
+        --secondary: 222 22% 18%;
+        --secondary-foreground: 210 40% 92%;
+
+        --muted: 220 16% 20%;
+        --muted-foreground: 215 16% 68%;
+
+        --accent: 195 92% 58%;
+        --accent-foreground: 210 40% 98%;
+
+        --destructive: 4 84% 56%;
+        --destructive-foreground: 210 40% 98%;
+
+        --border: 220 18% 26%;
+        --input: 222 22% 14% / 0.6;
+        --ring: 195 92% 58%;
+
+        --radius: 0.8rem;
+
+        --gradient-sunny: linear-gradient(135deg, hsl(200 82% 18%), hsl(215 70% 14%));
+        --gradient-cloudy: linear-gradient(135deg, hsl(220 16% 18%), hsl(220 16% 14%));
+        --gradient-rainy: linear-gradient(135deg, hsl(210 70% 16%), hsl(205 70% 12%));
+        --gradient-clear: linear-gradient(135deg, hsl(215 72% 16%), hsl(225 66% 12%));
+        --gradient-night: linear-gradient(135deg, hsl(230 40% 10%), hsl(240 38% 8%));
+
+        --glass-card: 222 22% 14% / 0.5;
+        --glass-border: 220 18% 26% / 0.9;
+        --glass-shadow: 0 8px 32px hsl(220 14% 6% / 0.4);
+
+        --gradient-animated: linear-gradient(-45deg, hsl(215 72% 16%), hsl(225 66% 12%), hsl(200 70% 16%), hsl(210 72% 14%));
+
+        --sidebar-background: 222 22% 14%;
+        --sidebar-foreground: 210 40% 96%;
+        --sidebar-primary: 199 89% 51%;
+        --sidebar-primary-foreground: 210 40% 98%;
+        --sidebar-accent: 222 22% 18%;
+        --sidebar-accent-foreground: 210 40% 96%;
+        --sidebar-border: 220 18% 26%;
+        --sidebar-ring: 195 92% 58%;
+    }
+
+    .dark {
+        --background: 222 16% 12%;
+        --foreground: 210 40% 96%;
+
+        --card: 222 22% 14%;
+        --card-foreground: 210 40% 96%;
+
+        --popover: 222 22% 14%;
+        --popover-foreground: 210 40% 96%;
+
+        --primary: 199 89% 51%;
+        --primary-foreground: 210 40% 98%;
+
+        --secondary: 222 22% 18%;
+        --secondary-foreground: 210 40% 92%;
+
+        --muted: 220 16% 20%;
+        --muted-foreground: 215 16% 68%;
+
+        --accent: 195 92% 58%;
+        --accent-foreground: 210 40% 98%;
+
+        --destructive: 4 84% 56%;
+        --destructive-foreground: 210 40% 98%;
+
+        --border: 220 18% 26%;
+        --input: 222 22% 14% / 0.6;
+        --ring: 195 92% 58%;
+        --sidebar-background: 222 22% 14%;
+        --sidebar-foreground: 210 40% 96%;
+        --sidebar-primary: 199 89% 51%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 222 22% 18%;
+        --sidebar-accent-foreground: 210 40% 96%;
+        --sidebar-border: 220 18% 26%;
+        --sidebar-ring: 195 92% 58%;
+    }
+}
+
+@layer base {
+    * { @apply border-border; }
+    html { color-scheme: dark; }
+    body { @apply bg-background text-foreground; }
+}
+
+@layer components {
+    .glass-card {
+        background: hsl(var(--glass-card));
+        backdrop-filter: blur(10px);
+        border: 1px solid hsl(var(--glass-border));
+        box-shadow: var(--glass-shadow);
+        border-radius: var(--radius);
+    }
+    .glass-input {
+        background: hsl(var(--input));
+        backdrop-filter: blur(8px);
+        border: 1px solid hsl(var(--glass-border));
+        border-radius: calc(var(--radius) - 2px);
+    }
+
+    .bg-sunny { background: var(--gradient-sunny); }
+    .bg-cloudy { background: var(--gradient-cloudy); }
+    .bg-rainy { background: var(--gradient-rainy); }
+    .bg-clear { background: var(--gradient-clear); }
+    .bg-night { background: var(--gradient-night); }
+
+    /* Désactivée: plus d’animation, mais on garde la classe pour un fond statique */
+    .bg-animated {
+        background: var(--gradient-clear);
+        background-size: cover;
+    }
+
+    .weather-icon {
+        transition: transform 0.25s ease, filter 0.25s ease;
+        filter: drop-shadow(0 0 10px hsl(var(--accent) / 0.2));
+    }
+    .weather-icon:hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 0 16px hsl(var(--accent) / 0.35));
+    }
+
+    .transition-smooth { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+}
+
+@layer utilities {
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+    }
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 0 hsl(var(--accent) / 0); }
+        50% { box-shadow: 0 0 30px hsl(var(--accent) / 0.35); }
+    }
+    @keyframes fade-in {
+        0% { opacity: 0; transform: translateY(8px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .animate-fade-in { animation: fade-in 420ms ease-out both; }
+}
