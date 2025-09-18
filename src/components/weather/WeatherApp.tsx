@@ -32,17 +32,28 @@ export const WeatherApp = () => {
         try {
             const data = await WeatherService.getWeatherData(lat, lon, name);
             setWeather(data);
-            toast({ title: "Météo mise à jour", description: `Affichage pour ${data.location.name}` });
+            toast({
+                title: "Météo mise à jour",
+                description: `Affichage pour ${data.location.name}`,
+            });
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Impossible de charger les données météo";
+            const msg =
+                err instanceof Error
+                    ? err.message
+                    : "Impossible de charger les données météo";
             setError(msg);
-            toast({ title: "Erreur", description: msg, variant: "destructive" });
+            toast({
+                title: "Erreur",
+                description: msg,
+                variant: "destructive",
+            });
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
 
-    const handleLocationSelect = (loc: GeocodeResult) => load(loc.latitude, loc.longitude, loc.name);
+    const handleLocationSelect = (loc: GeocodeResult) =>
+        load(loc.latitude, loc.longitude, loc.name);
 
     const handleCurrentLocation = async () => {
         setIsLoading(true);
@@ -50,11 +61,21 @@ export const WeatherApp = () => {
         try {
             const data = await WeatherService.getCurrentLocationWeather();
             setWeather(data);
-            toast({ title: "Position trouvée", description: "Affichage de la météo pour votre position actuelle." });
+            toast({
+                title: "Position trouvée",
+                description: "Affichage de la météo pour votre position actuelle.",
+            });
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Impossible de récupérer votre position";
+            const msg =
+                err instanceof Error
+                    ? err.message
+                    : "Impossible de récupérer votre position";
             setError(msg);
-            toast({ title: "Erreur de géolocalisation", description: msg, variant: "destructive" });
+            toast({
+                title: "Erreur de géolocalisation",
+                description: msg,
+                variant: "destructive",
+            });
         } finally {
             setIsLoading(false);
         }
@@ -62,7 +83,7 @@ export const WeatherApp = () => {
 
     useEffect(() => {
         load(48.8566, 2.3522, "Paris");
-    }, [load]);
+    }, [load]); // Ajout de 'load' dans le tableau des dépendances
 
     const renderContent = () => {
         if (isLoading && !weather) {
@@ -77,7 +98,9 @@ export const WeatherApp = () => {
             return (
                 <Alert className="mb-6 glass-card border-destructive">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-destructive-foreground">{error}</AlertDescription>
+                    <AlertDescription className="text-destructive-foreground">
+                        {error}
+                    </AlertDescription>
                 </Alert>
             );
         }
