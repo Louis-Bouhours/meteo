@@ -1,0 +1,76 @@
+# .github/workflows/ci-cd.yml
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ===============================================
+  # ==  Vérification de la qualité du code (CI)  ==
+  # ===============================================
+  quality-checks:
+    name: 🧪 Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # ou '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+  # ==================================================
+  # ==  Déploiement sur le VPS (CD)                 ==
+  # ==================================================
+  deploy:
+    name: 🚀 Deploy to VPS
+    needs: quality-checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            PROJECT_DIR="/var/www/meteo"
+            GIT_REPO="https://github.com/${{ github.repository }}.git"
+
+            echo "Starting deployment for 'meteo' project..."
+
+            if [ -d "$PROJECT_DIR" ]; then
+              echo "✅ Project directory exists. Pulling latest changes..."
+              cd $PROJECT_DIR
+              git pull origin main
+            else
+              echo "📂 Project directory does not exist. Cloning repository..."
+              mkdir -p /var/www
+              cd /var/www
+              git clone $GIT_REPO meteo
+              cd $PROJECT_DIR
+            fi
+
+            echo "🐳 Restarting Docker containers..."
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
+
+            echo "🚀 Deployment finished successfully!"
