@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { WeatherData, GeocodeResult } from "@/types/weather";
 import { WeatherService } from "@/services/weatherService";
 import { AppHeader } from "./AppHeader";
@@ -26,7 +26,7 @@ export const WeatherApp = () => {
         return "bg-clear";
     };
 
-    const load = async (lat: number, lon: number, name?: string) => {
+    const load = useCallback(async (lat: number, lon: number, name?: string) => {
         setIsLoading(true);
         setError(null);
         try {
@@ -40,7 +40,7 @@ export const WeatherApp = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [toast]);
 
     const handleLocationSelect = (loc: GeocodeResult) => load(loc.latitude, loc.longitude, loc.name);
 
@@ -62,7 +62,7 @@ export const WeatherApp = () => {
 
     useEffect(() => {
         load(48.8566, 2.3522, "Paris");
-    }, []);
+    }, [load]);
 
     const renderContent = () => {
         if (isLoading && !weather) {

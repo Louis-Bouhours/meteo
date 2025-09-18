@@ -20,7 +20,7 @@ const Command = React.forwardRef<
 ));
 Command.displayName = CommandPrimitive.displayName;
 
-export type CommandProps = React.HTMLAttributes<HTMLDivElement>
+export type CommandProps = React.HTMLAttributes<HTMLDivElement>;
 
 const CommandDialog = ({ children, ...props }: CommandProps) => {
   return (
