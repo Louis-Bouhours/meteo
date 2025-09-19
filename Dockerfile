@@ -1,20 +1,18 @@
-# Utiliser une image de base légère
-FROM node:18-alpine
-
-# Définir le répertoire de travail
+# Étape 1 : Build des assets Vite
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copier les fichiers de dépendances
 COPY package*.json ./
+RUN npm ci
 
-# Installer les dépendances
-RUN npm ci --only=production
-
-# Copier le reste des fichiers de l'application
 COPY . .
 
-# Exposer le port sur lequel l'application s'exécute
-EXPOSE 3000
+RUN npm run build
 
-# Commande pour démarrer l'application
-CMD ["npm", "start"]
+FROM caddy:2.8-alpine
+
+COPY --from=build /app/dist /srv
+
+COPY Caddyfile.container /etc/caddy/Caddyfile
+
+EXPOSE 80
