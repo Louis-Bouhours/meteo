@@ -1,5 +1,3 @@
-# .github/workflows/ci-cd.yml
-
 name: CI/CD Pipeline
 
 on:
@@ -9,11 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  # ===============================================
-  # ==  Vérification de la qualité du code (CI)  ==
-  # ===============================================
   quality-checks:
-    name: 🧪 Quality Checks
+    name: "🧪 Quality Checks"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -34,11 +29,8 @@ jobs:
       - name: Run tests
         run: npm test
 
-  # ==================================================
-  # ==  Déploiement sur le VPS (CD)                 ==
-  # ==================================================
   deploy:
-    name: 🚀 Deploy to VPS
+    name: "🚀 Deploy to VPS"
     needs: quality-checks
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -50,27 +42,69 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          script_stop: true
           script: |
-            PROJECT_DIR="/var/www/meteo"
+            set -euo pipefail
+
+            APP_ROOT="/home/apps/meteo"
+            REPO_DIR="$APP_ROOT/repo"
             GIT_REPO="https://github.com/${{ github.repository }}.git"
 
-            echo "Starting deployment for 'meteo' project..."
+            echo "==== Deployment start $(date -u) ===="
+            echo "Target root: $APP_ROOT"
 
-            if [ -d "$PROJECT_DIR" ]; then
-              echo "✅ Project directory exists. Pulling latest changes..."
-              cd $PROJECT_DIR
-              git pull origin main
-            else
-              echo "📂 Project directory does not exist. Cloning repository..."
-              mkdir -p /var/www
-              cd /var/www
-              git clone $GIT_REPO meteo
-              cd $PROJECT_DIR
+            # 1. Préparation dossier
+            if [ ! -d "$APP_ROOT" ]; then
+              echo "📂 Creating $APP_ROOT"
+              mkdir -p "$APP_ROOT"
             fi
 
-            echo "🐳 Restarting Docker containers..."
-            docker-compose down
-            docker-compose build
-            docker-compose up -d
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              echo "⬇️ Cloning repository (fresh)"
+              rm -rf "$REPO_DIR"
+              git clone "$GIT_REPO" "$REPO_DIR"
+            else
+              echo "🔄 Updating repository"
+              cd "$REPO_DIR"
+              git fetch --all --prune
+              git reset --hard origin/main
+            fi
 
-            echo "🚀 Deployment finished successfully!"
+            cd "$REPO_DIR"
+
+            # =========================================================
+            # MODE 1: Docker (actuel) - conserve ton docker-compose
+            # =========================================================
+            if [ -f docker-compose.yml ] || [ -f compose.yml ]; then
+              echo "🐳 Docker mode detected"
+              if command -v docker compose >/dev/null 2>&1; then
+                DC="docker compose"
+              else
+                DC="docker-compose"
+              fi
+
+              # Stop & rebuild
+              $DC down || true
+              $DC build --pull
+              $DC up -d
+
+              echo "🐳 Active containers:"
+              $DC ps
+            else
+              echo "⚠️ Aucun docker-compose.yml trouvé. (Si tu veux utiliser Docker, ajoute-le.)"
+            fi
+
+            # =========================================================
+            # MODE 2 (OPTIONNEL): Build statique Vite + Caddy
+            # Dé-commente si tu passes en mode statique
+            # =========================================================
+            # echo "📦 Installing dependencies (prod build)..."
+            # npm ci
+            # echo "🏗 Building Vite app..."
+            # npm run build
+            # mkdir -p "$APP_ROOT/dist"
+            # rsync -a --delete dist/ "$APP_ROOT/dist/"
+            # echo "🔁 Reloading Caddy (si nécessaire)..."
+            # sudo systemctl reload caddy || true
+
+            echo "✅ Deployment finished $(date -u)"
