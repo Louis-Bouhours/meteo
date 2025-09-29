@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   quality-checks:
@@ -29,51 +30,108 @@ jobs:
       - name: Run tests
         run: npm test
 
-  deploy:
-    name: "🚀 Deploy to VPS"
-    needs: quality-checks
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  docker-release:
+    name: "🐳 Build and Push Docker image to GHCR"
     runs-on: ubuntu-latest
+    needs: quality-checks
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
     steps:
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image name
+        run: |
+          IMAGE_NAME="ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
+
+      - name: Build Docker image
+        run: |
+          docker build -t "$IMAGE_NAME:latest" -t "$IMAGE_NAME:${{ github.run_number }}" .
+
+      - name: Push Docker image
+        run: |
+          docker push "$IMAGE_NAME:latest"
+          docker push "$IMAGE_NAME:${{ github.run_number }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: "Release v${{ github.run_number }}"
+          body: |
+            Generated release for meteo
+            - Docker image: ${{ env.IMAGE_NAME }}:latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: "🚀 Deploy to VPS (deployer)"
+    runs-on: ubuntu-latest
+    needs: docker-release
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GH_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          # APP_PORT can be set in repo variables; default to 2428 for meteo
+          APP_PORT: 2428
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT }}
+          username: deployer
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # If you use a non-standard SSH port, uncomment the next line and set a VPS_PORT secret
+          # port: ${{ secrets.VPS_PORT }}
+          envs: GH_USER,GH_TOKEN,GH_REPO,APP_PORT
           script: |
-            # --- Variables ---
-            PROJECT_DIR="/var/www/meteo"
-            GIT_REPO="https://github.com/${{ github.repository }}.git"
-            CONTAINER_NAME="meteo-app"
-            IMAGE_NAME="meteo-image"
-            
-            # --- Logique de Déploiement ---
-            echo "Starting deployment for 'meteo' project..."
-            
-            # Vérifie et clone/pull le code source
-            if [ -d "$PROJECT_DIR" ]; then
-              cd $PROJECT_DIR
-              git pull origin main
-            else
-              mkdir -p /var/www
-              cd /var/www
-              git clone $GIT_REPO meteo
-              cd $PROJECT_DIR
-            fi
-            
-            echo "🐳 Building and running Docker container..."
-            cd $PROJECT_DIR
-            
-            # Construire la nouvelle image Docker
-            docker build -t $IMAGE_NAME .
-            
-            # Arrêter et supprimer l'ancien conteneur s'il existe
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-            
-            # Lancer un nouveau conteneur avec la nouvelle image
-            docker run -d -p 3000:3000 --name $CONTAINER_NAME --restart always $IMAGE_NAME
-            
-            echo "🚀 Deployment finished successfully!"
+            set -euo pipefail
+
+            echo "Logging into GitHub Container Registry..."
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
+
+            # Derive names
+            APP_NAME="$(basename "$GH_REPO" | tr '[:upper:]' '[:lower:]')"   # => meteo
+            IMAGE_NAME="ghcr.io/$(echo "$GH_REPO" | tr '[:upper:]' '[:lower:]')" # => ghcr.io/louis-bouhours/meteo
+            PORT="${APP_PORT:-2428}"  # default port for meteo
+
+            echo "Using image: $IMAGE_NAME:latest"
+            echo "App name: $APP_NAME"
+            echo "App port: $PORT"
+
+            # Directory layout for multi-app hosting with Caddy
+            BASE_DIR="$HOME/apps/$APP_NAME"
+            mkdir -p "$BASE_DIR"/{data,logs}
+
+            echo "Pulling the latest image..."
+            docker pull "$IMAGE_NAME:latest"
+
+            echo "Stopping and removing the old container if it exists..."
+            docker stop "$APP_NAME" || true
+            docker rm "$APP_NAME" || true
+
+            echo "Starting the new container..."
+            # NOTE: The app listens on container port 3000; publish it to localhost:PORT
+            docker run -d \
+              --name "$APP_NAME" \
+              --restart unless-stopped \
+              -p 127.0.0.1:"$PORT":3000 \
+              -v "$BASE_DIR/data":/data \
+              -v "$BASE_DIR/logs":/var/log/app \
+              "$IMAGE_NAME:latest"
+
+            echo "Container '$APP_NAME' is running on 127.0.0.1:$PORT (proxied by Caddy)."
+
+            echo "Logging out from GitHub Container Registry..."
+            docker logout ghcr.io
