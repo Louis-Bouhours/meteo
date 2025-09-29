@@ -126,7 +126,7 @@ jobs:
             docker run -d \
               --name "$APP_NAME" \
               --restart unless-stopped \
-              -p 127.0.0.1:"$PORT":3000 \
+              -p 127.0.0.1:"$PORT":80 \
               -v "$BASE_DIR/data":/data \
               -v "$BASE_DIR/logs":/var/log/app \
               "$IMAGE_NAME:latest"
