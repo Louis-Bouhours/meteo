@@ -1,0 +1,22 @@
+{
+  "name": "meteo+",
+  "short_name": "meteo",
+  "description": "Application météo simple et rapide",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0ea5e9",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/src/img/logoLB.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "/src/img/logoLB.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}

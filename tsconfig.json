@@ -21,7 +21,7 @@
       "@/*": ["./src/*"]
     },
 
-    "types": ["vitest", "node"],
+    "types": ["vite/client", "vitest", "node"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true
